@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 데이터 대시보드 — 시연용 프로토타입</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div id="loading" role="status" aria-live="polite">
+  <div class="spinner"></div>
+  <p id="loadingText">데이터를 분석하고 있습니다…</p>
+</div>
+
+<header class="topbar">
+  <div class="brand"><span class="logo">📊</span> AI 데이터 대시보드 <span class="proto-badge">시연용 프로토타입</span></div>
+</header>
+
+<main class="container narrow">
+  <section class="hero">
+    <span class="kicker">외부 AI API 없이 로컬에서 완전 동작</span>
+    <h1>CSV를 올리면, AI가 읽고 말해줍니다</h1>
+    <p class="muted">날짜·숫자·범주 컬럼 자동 인식 → 차트 자동 생성 → 인사이트 자동 서술.<br>
+    업로드된 파일은 서버 외부로 전송되지 않습니다.</p>
+  </section>
+
+  {% if error %}
+  <div class="alert error">⚠️ {{ error }}</div>
+  {% endif %}
+
+  <section class="card">
+    <h2>📁 CSV 파일 업로드</h2>
+    <form id="uploadForm" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+      <label class="dropzone" id="dropzone">
+        <input type="file" name="file" id="fileInput" accept=".csv" hidden>
+        <div class="dz-icon">📄</div>
+        <div id="dzText"><strong>CSV 파일을 선택</strong>하거나 여기로 드래그하세요</div>
+        <div class="muted small" style="margin-top:6px">최대 10MB · UTF-8 / CP949 인코딩 자동 인식</div>
+      </label>
+      <button type="submit" class="btn primary">분석 시작 →</button>
+    </form>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><p><strong>컬럼 자동 인식</strong><br>날짜·숫자·범주를 구분합니다</p></div>
+      <div class="step"><div class="n">2</div><p><strong>차트 자동 생성</strong><br>시계열·막대·파이·히스토그램</p></div>
+      <div class="step"><div class="n">3</div><p><strong>인사이트 자동 서술</strong><br>증감률·이상치·상위항목을 문장으로</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🚀 파일이 없나요? 샘플로 바로 시연</h2>
+    <p class="muted">가상 월별 매출 데이터 12개월치 (72행: 월 × 제품군 × 채널)가 준비되어 있습니다.
+    이상치·추세·채널 비교 인사이트를 바로 확인할 수 있어요.</p>
+    <div class="row">
+      <a class="btn primary" id="sampleBtn" href="{{ url_for('sample') }}">샘플 데이터로 대시보드 보기 →</a>
+      <a class="btn ghost" href="{{ url_for('sample_download') }}">⬇ 샘플 CSV 다운로드</a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer muted small">시연용 프로토타입 · 정식 구축 시 LLM 연동 및 실시간 DB 연동 전제</footer>
+
+<script>
+const loading = document.getElementById('loading');
+const loadingText = document.getElementById('loadingText');
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('fileInput');
+const dt = document.getElementById('dzText');
+
+function showLoading(msg) { loadingText.textContent = msg; loading.classList.add('show'); }
+
+document.getElementById('uploadForm').addEventListener('submit', e => {
+  if (!fi.files.length) { e.preventDefault(); dt.innerHTML = '<strong style="color:#f87171">먼저 CSV 파일을 선택해주세요</strong>'; return; }
+  showLoading('CSV를 읽고 인사이트를 생성하고 있습니다…');
+});
+document.getElementById('sampleBtn').addEventListener('click', () => showLoading('샘플 데이터를 분석하고 있습니다…'));
+
+dz.addEventListener('click', () => fi.click());
+fi.addEventListener('change', () => {
+  if (fi.files.length) dt.innerHTML = '✅ <strong>' + fi.files[0].name + '</strong> 선택됨';
+});
+['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => {
+  if (e.dataTransfer.files.length) {
+    fi.files = e.dataTransfer.files;
+    dt.innerHTML = '✅ <strong>' + e.dataTransfer.files[0].name + '</strong> 선택됨';
+  }
+});
+</script>
+</body>
+</html>
